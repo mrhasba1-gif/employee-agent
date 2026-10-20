@@ -47,7 +47,8 @@ jobs:
             echo "::endgroup::"
           done <<< "$REPOS"
 
-          git add -A
+          # -f: the upstream .gitignore files must not drop their tracked files
+          git add -A -f
           if git diff --cached --quiet; then
             echo "Nothing to import."
             exit 0
