@@ -1,1 +1,0 @@
-[submodule "cli-anything"]\n\tpath = cli-anything\n\turl = https://github.com/HKUDS/CLI-Anything.git\n[submodule "ufo"]\n\tpath = ufo\n\turl = https://github.com/microsoft/UFO.git\n[submodule "windows-mcp"]\n\tpath = windows-mcp\n\turl = https://github.com/cursortouch/windows-mcp.git

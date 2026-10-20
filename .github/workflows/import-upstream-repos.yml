@@ -1,0 +1,56 @@
+name: Import upstream repositories
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-upstream-repos
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: ${{ !contains(github.event.head_commit.message, '[skip-import]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Clone upstream repos into their folders
+        env:
+          REPOS: |
+            cli-anything|https://github.com/HKUDS/CLI-Anything.git|CLI-Anything
+            ufo|https://github.com/microsoft/UFO.git|Microsoft UFO
+            windows-mcp|https://github.com/cursortouch/windows-mcp.git|Windows-MCP
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Drop the old submodule bookkeeping (if any) so the folders become real content.
+          rm -f .gitmodules
+
+          while IFS='|' read -r dir url label; do
+            [ -z "${dir:-}" ] && continue
+            echo "::group::Cloning ${label} -> ${dir}/"
+            git rm -r -q --cached "$dir" 2>/dev/null || true
+            rm -rf "$dir"
+            git clone --depth 1 "$url" "$dir"
+            rm -rf "$dir/.git"
+            echo "files: $(find "$dir" -type f | wc -l)"
+            echo "::endgroup::"
+          done <<< "$REPOS"
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to import."
+            exit 0
+          fi
+          git commit -m "Import upstream sources into cli-anything/, ufo/ and windows-mcp/ [skip-import]"
+          git push origin HEAD:main
